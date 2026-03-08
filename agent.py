@@ -3,6 +3,8 @@ import subprocess
 import time 
 from langgraph.graph import StateGraph
 import cv2 
+from plyer import notification
+
 
 # JOUR2 Classification 
 categories = {
@@ -20,6 +22,7 @@ class CurrentApp (TypedDict) :
     category : str 
     score : int 
     presence : str 
+    distraction_streak : int 
 
 
 def capture_app(state: CurrentApp) -> dict:
@@ -66,10 +69,15 @@ def classify (state : CurrentApp) :
 
 def update_score ( state : CurrentApp) : 
     category = state["category"]
-    if ( category == "productif"): 
+    presence = state ["presence"]
+    if ( presence =="present" and category == "productif"): 
+        state["score"]+= 2
+    if ( presence =="present" and category == "distraction"): 
+        state["score"]-= 3
+    if (presence =="distracted" and category == "productif"): 
         state["score"]+= 1
-    if (category == "distraction"): 
-        state["score"]-= 1
+    if (presence =="distracted" and category == "distraction"): 
+        state["score"]-= 3
     return {"score": state["score"]}
 
 #part3 webcam 
@@ -94,6 +102,22 @@ def check_presence (state : CurrentApp) :
     
     return {"presence" : presence}
 
+#step 4 desktop alert when too much distracted 
+def update_distraction (state : CurrentApp ) : 
+    if (state["category"]=="distraction" or state["presence"]=='distracted') :
+        return {"distraction_streak":state["distraction_streak"]+1}
+    return {"distraction_streak":0}
+
+def send_alert (state : CurrentApp) : 
+    if ( state["distraction_streak"]>=3) : 
+        notification.notify(
+            title="FocusOS — Alerte",
+            message=f"Tu es en distraction depuis {state['distraction_streak']} cycles !",
+            timeout=5
+        )
+    return {}
+
+
 
 
 
@@ -102,6 +126,8 @@ graph.add_node ("capturer_app",capture_app)
 graph.add_node ("check_presence",check_presence)
 graph.add_node ("classify", classify)
 graph.add_node ("update_score",update_score)
+graph.add_node("update_distraction",update_distraction)
+graph.add_node ("send_alert", send_alert)
 graph.add_node ("attente",log_and_wait)
 
 graph.add_conditional_edges("attente", router, {"capture": "capturer_app"}) #for the loop
@@ -109,10 +135,12 @@ graph.add_conditional_edges("attente", router, {"capture": "capturer_app"}) #for
 graph.add_edge("capturer_app","check_presence")
 graph.add_edge("check_presence","classify")
 graph.add_edge("classify","update_score")
-graph.add_edge("update_score","attente")
+graph.add_edge("update_score","update_distraction")
+graph.add_edge("update_distraction","send_alert")
+graph.add_edge("send_alert","attente")
 graph.set_entry_point("capturer_app")
 app = graph.compile()
-app.invoke({"current_app": "Premiere Pro", "iteration": 1, "category":"neutre", "score" : 0, "presence":"absent"}) # les premiers states sont obligatoires
+app.invoke({"current_app": "Premiere Pro", "iteration": 1, "category":"neutre", "score" : 0, "presence":"absent", "distraction_streak":0}) # les premiers states sont obligatoires
 
 
 
