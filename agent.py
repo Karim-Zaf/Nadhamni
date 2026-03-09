@@ -122,7 +122,7 @@ def update_distraction (state : CurrentApp ) :
 def send_alert (state : CurrentApp) : 
     if ( state["distraction_streak"]>=3) : 
         notification.notify(
-            title="FocusOS — Alerte",
+            title="Nadhamni — Alerte",
             message=f"Tu es en distraction depuis {state['distraction_streak']} cycles !",
             timeout=5
         )

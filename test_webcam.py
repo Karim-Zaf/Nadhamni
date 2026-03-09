@@ -15,5 +15,5 @@ yeux = eye_cascade.detectMultiScale(gray)
 print(f"Visages: {len(visage)}, Yeux: {len(yeux)}")
 
 # pour voir l'image capturer 
-# cv2.imshow("FocusOS - Webcam Test", image)
+# cv2.imshow("Nadhamni - Webcam Test", image)
 # cv2.waitKey(0)

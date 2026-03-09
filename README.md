@@ -1,4 +1,6 @@
-# FocusOS — AI Productivity Agent
+# Nadhamni — AI Productivity Agent
+
+> *"Nadhamni"* means *"Organize me"* in Tunisian Arabic.
 
 An intelligent desktop agent that monitors your activity, detects your presence via webcam, and nudges you back to focus when distractions take over.
 
@@ -32,7 +34,7 @@ The graph loops infinitely: after `log_wait`, a **router** sends execution back 
 
 ## Demo
 
-![FocusOS Demo](exemple-execution.png)
+![Nadhamni Demo](exemple-execution.png)
 
 ---
 
@@ -72,8 +74,8 @@ The graph loops infinitely: after `log_wait`, a **router** sends execution back 
 
 ```bash
 # Clone the repo
-git clone https://github.com/YOUR_USERNAME/focusos.git
-cd focusos
+git clone https://github.com/Karim-Zaf/Nadhamni.git
+cd Nadhamni
 
 # Create virtual environment
 python3 -m venv venv
@@ -98,7 +100,7 @@ python agent.py
 ## Project Structure
 
 ```
-focusos-project-code/
+nadhamni/
 ├── agent.py          # Main LangGraph agent (all nodes + graph)
 ├── test_webcam.py    # Standalone webcam test script
 ├── requirements.txt  # Python dependencies
