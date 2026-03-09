@@ -1,6 +1,9 @@
+import os
 from typing import TypedDict
 import subprocess
 import time 
+from dotenv import load_dotenv
+from groq import Groq
 from langgraph.graph import StateGraph
 import cv2 
 from plyer import notification
@@ -14,8 +17,10 @@ categories = {
     "spotify": "neutre",
     "instagram": "distraction",
     "tiktok": "distraction",
+    
 }
 
+historique_global = []
 class CurrentApp (TypedDict) :
     current_app : str
     iteration : int 
@@ -23,6 +28,7 @@ class CurrentApp (TypedDict) :
     score : int 
     presence : str 
     distraction_streak : int 
+    historique : list [str]
 
 
 def capture_app(state: CurrentApp) -> dict:
@@ -53,9 +59,16 @@ def log_and_wait (state : CurrentApp) -> dict :
     category = state["category"]
     score = state ["score"]
     presence = state["presence"]
-    print(f"[iter{ iteration }   ] APP : { current_app } | {category} | {score} | {presence}")
+
+    resultat_log = f"[iter{ iteration }   ] APP : { current_app } | {category} | {score} | {presence}"
+    print (resultat_log)
+    
     time.sleep(3)
-    return{}
+    
+    historique = state["historique"].copy()
+    historique.append(resultat_log)
+    historique_global.append(resultat_log)
+    return{"historique":historique}
 
 def router (state: CurrentApp) -> dict : 
     return "capture"
@@ -118,8 +131,27 @@ def send_alert (state : CurrentApp) :
     return {}
 
 
+#step5 integrating LLM
+def LLM_answer (prompt : str) : 
+    load_dotenv()
 
+    grok_key = os.getenv("GROQ_API_KEY")
 
+    client = Groq(api_key=grok_key)
+
+    response = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=[{"role": "user", "content": prompt}]
+    )
+
+    return response.choices[0].message.content
+
+def generate_report () : 
+    prompt = "You need to make me a summary about my activity. Here are the logs : "
+    for log in historique_global :
+        prompt += "\'" + log + "\'\n"
+    summary = LLM_answer (prompt)
+    print(summary)
 
 graph = StateGraph(CurrentApp) # ou peut etre StateGraph({})
 graph.add_node ("capturer_app",capture_app)
@@ -140,7 +172,10 @@ graph.add_edge("update_distraction","send_alert")
 graph.add_edge("send_alert","attente")
 graph.set_entry_point("capturer_app")
 app = graph.compile()
-app.invoke({"current_app": "Premiere Pro", "iteration": 1, "category":"neutre", "score" : 0, "presence":"absent", "distraction_streak":0}) # les premiers states sont obligatoires
 
+try :
+    app.invoke({"current_app": "Premiere Pro", "iteration": 1, "category":"neutre", "score" : 0, "presence":"absent", "distraction_streak":0 , "historique":[]}) # les premiers states sont obligatoires
+except KeyboardInterrupt : 
+    generate_report()
 
 
