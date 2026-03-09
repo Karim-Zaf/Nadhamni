@@ -2,7 +2,7 @@
 
 An intelligent desktop agent that monitors your activity, detects your presence via webcam, and nudges you back to focus when distractions take over.
 
-Built with **LangGraph** (stateful agent graph), **OpenCV** (computer vision), and **plyer** (desktop notifications).
+Built with **LangGraph** (stateful agent graph), **OpenCV** (computer vision), **Groq** (LLM reports), and **plyer** (desktop notifications).
 
 ---
 
@@ -30,6 +30,12 @@ The graph loops infinitely: after `log_wait`, a **router** sends execution back 
 
 ---
 
+## Demo
+
+![FocusOS Demo](exemple-execution.png)
+
+---
+
 ## Features
 
 - **App Detection** — Captures the most CPU-active process via `psutil`
@@ -37,6 +43,7 @@ The graph loops infinitely: after `log_wait`, a **router** sends execution back 
 - **Webcam Presence** — Haar Cascade face + eye detection → `present` / `distracted` / `absent`
 - **Dynamic Scoring** — Score evolves based on app category × presence state
 - **Distraction Alerts** — Desktop notification after 3+ consecutive distraction cycles
+- **AI Evening Report** — Groq LLM generates a productivity summary on session end (Ctrl+C)
 
 ### Scoring Matrix
 
@@ -56,6 +63,7 @@ The graph loops infinitely: after `log_wait`, a **router** sends execution back 
 | App Detection   | psutil                |
 | Computer Vision | OpenCV (Haar Cascade) |
 | Notifications   | plyer                 |
+| LLM Reports     | Groq (Llama 3.3 70B) |
 | Language        | Python 3.12           |
 
 ---
@@ -72,10 +80,15 @@ python3 -m venv venv
 source venv/bin/activate
 
 # Install dependencies
-pip install langgraph psutil opencv-python plyer
+pip install -r requirements.txt
+
+# Setup environment
+cp .env.example .env
+# Edit .env and add your Groq API key (free at console.groq.com)
 
 # Run the agent
 python agent.py
+# Press Ctrl+C to stop and generate AI report
 ```
 
 > **Note:** Webcam access is required for presence detection.
@@ -87,7 +100,10 @@ python agent.py
 ```
 focusos-project-code/
 ├── agent.py          # Main LangGraph agent (all nodes + graph)
-├── testwebcam.py     # Standalone webcam test script
+├── test_webcam.py    # Standalone webcam test script
+├── requirements.txt  # Python dependencies
+├── .env.example      # Environment variables template
+├── .gitignore
 ├── README.md
 └── venv/
 ```
@@ -108,7 +124,7 @@ focusos-project-code/
 
 ## Roadmap
 
-- [ ] **Groq AI Evening Report** — Daily productivity summary via LLM
+- [x] **Groq AI Evening Report** — Daily productivity summary via LLM
 - [ ] **SQLite Persistence** — Store sessions and scores
 - [ ] **React Dashboard** — Visualize productivity trends
 - [ ] **Browser Tab Detection** — Classify by active tab, not just process
@@ -118,7 +134,7 @@ focusos-project-code/
 
 ## Built For Learning
 
-This project was built as a hands-on way to learn **LangGraph** — from state management and node design to conditional edges and infinite loops. Each feature was added incrementally over 4 days, with a focus on understanding the "why" behind every concept.
+This project was built as a hands-on way to learn **LangGraph** — from state management and node design to conditional edges and infinite loops. Each feature was added incrementally over 5 days, with a focus on understanding the "why" behind every concept.
 
 ---
 

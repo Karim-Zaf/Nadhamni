@@ -1,11 +1,11 @@
 import os
 from typing import TypedDict
-import subprocess
-import time 
+import time
+import psutil
 from dotenv import load_dotenv
 from groq import Groq
 from langgraph.graph import StateGraph
-import cv2 
+import cv2
 from plyer import notification
 
 
@@ -32,8 +32,6 @@ class CurrentApp (TypedDict) :
 
 
 def capture_app(state: CurrentApp) -> dict:
-    import psutil
-    
     # Récupère les process qui utilisent le plus de CPU
     procs = []
     for proc in psutil.process_iter(['name', 'cpu_percent']):
@@ -132,25 +130,40 @@ def send_alert (state : CurrentApp) :
 
 
 #step5 integrating LLM
-def LLM_answer (prompt : str) : 
+def LLM_answer (system_prompt: str, user_prompt : str) :
     load_dotenv()
 
-    grok_key = os.getenv("GROQ_API_KEY")
+    groq_key = os.getenv("GROQ_API_KEY")
 
-    client = Groq(api_key=grok_key)
+    client = Groq(api_key=groq_key)
 
     response = client.chat.completions.create(
         model="llama-3.3-70b-versatile",
-        messages=[{"role": "user", "content": prompt}]
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt}
+        ]
     )
 
     return response.choices[0].message.content
 
-def generate_report () : 
-    prompt = "You need to make me a summary about my activity. Here are the logs : "
-    for log in historique_global :
-        prompt += "\'" + log + "\'\n"
-    summary = LLM_answer (prompt)
+def generate_report () :
+    if not historique_global:
+        print("Pas assez de données pour générer un rapport.")
+        return
+
+    system_prompt = """Tu es un coach de productivité. Analyse les logs d'activité et génère un rapport en français.
+Structure ton rapport ainsi :
+- Résumé global (1-2 phrases)
+- Stats clés (% productif, % distrait, % absent, score final)
+- Top apps utilisées
+- Conseil personnalisé pour demain"""
+
+    logs_text = "\n".join(historique_global)
+    user_prompt = f"Voici mes logs de session ({len(historique_global)} cycles) :\n{logs_text}"
+
+    print("\n📊 === RAPPORT DE PRODUCTIVITÉ === 📊\n")
+    summary = LLM_answer(system_prompt, user_prompt)
     print(summary)
 
 graph = StateGraph(CurrentApp) # ou peut etre StateGraph({})

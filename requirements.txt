@@ -1,0 +1,6 @@
+langgraph
+psutil
+opencv-python
+plyer
+groq
+python-dotenv
