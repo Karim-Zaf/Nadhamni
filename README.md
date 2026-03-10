@@ -89,7 +89,7 @@ cp .env.example .env
 # Edit .env and add your Groq API key (free at console.groq.com)
 
 # Run the agent
-python agent.py
+python main.py
 # Press Ctrl+C to stop and generate AI report
 ```
 
@@ -101,13 +101,15 @@ python agent.py
 
 ```
 nadhamni/
-├── agent.py          # Main LangGraph agent (all nodes + graph)
+├── main.py           # Entry point — run this to start the agent
+├── graph.py          # LangGraph StateGraph assembly
+├── nodes.py          # All agent nodes (capture, classify, score, etc.)
+├── config.py         # Categories dictionary + global state
 ├── test_webcam.py    # Standalone webcam test script
 ├── requirements.txt  # Python dependencies
 ├── .env.example      # Environment variables template
 ├── .gitignore
-├── README.md
-└── venv/
+└── README.md
 ```
 
 ---
