@@ -1,25 +1,16 @@
 import os
-from typing import TypedDict
-import time
-import psutil
+
 from dotenv import load_dotenv
 from groq import Groq
-from langgraph.graph import StateGraph
-import cv2
 from plyer import notification
 
+from config import categories, historique_global
+import time
+from typing import TypedDict
+import cv2
+import psutil
 
-# JOUR2 Classification 
-categories = {
-    "cursor": "productif",
-    "code": "productif",
-    "firefox": "neutre",
-    "spotify": "neutre",
-    "instagram": "distraction",
-    "tiktok": "distraction",
-}
 
-historique_global = []
 class CurrentApp (TypedDict) :
     current_app : str
     iteration : int 
@@ -71,20 +62,17 @@ def router (state: CurrentApp) -> dict :
     return "capture"
 
 
-#Part 2 : classifying used software 
-def classify(state: CurrentApp):
+#Part 2 : classifying used software
+def classify (state : CurrentApp) :
     current_app = state["current_app"]
     res = categories.get(current_app, None)
     if res is None:
         system_prompt = "Réponds avec UN SEUL mot : productif, neutre, ou distraction. Rien d'autre."
         user_prompt = f"L'application : {current_app}"
-        
         res = LLM_answer(system_prompt, user_prompt).strip().lower()
-        
-        categories[current_app] = res  # cache pour la prochaine fois
-    return {"category": res}
+        categories[current_app] = res
+    return {"category" : res}
 
-    
 def update_score ( state : CurrentApp) : 
     category = state["category"]
     presence = state ["presence"]
@@ -98,27 +86,32 @@ def update_score ( state : CurrentApp) :
         state["score"]-= 3
     return {"score": state["score"]}
 
-#part3 webcam 
+#part3 webcam
 def check_presence (state : CurrentApp) :
-    face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades+'haarcascade_frontalface_default.xml')
-    eye_cascade = cv2.CascadeClassifier(cv2.data.haarcascades+'haarcascade_eye.xml')
+    try:
+        face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades+'haarcascade_frontalface_default.xml')
+        eye_cascade = cv2.CascadeClassifier(cv2.data.haarcascades+'haarcascade_eye.xml')
 
-    video = cv2.VideoCapture(0)
-    ok, image = video.read()
-    video.release()
+        video = cv2.VideoCapture(0)
+        ok, image = video.read()
+        video.release()
 
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    visage = face_cascade.detectMultiScale(gray)
-    yeux = eye_cascade.detectMultiScale(gray)
+        if not ok or image is None:
+            return {"presence": "absent"}
 
-    # print(f"Visages: {len(visage)}, Yeux: {len(yeux)}")
-    presence ="absent"
-    if (len(visage) > 0 and len(yeux) > 0 ) :
-        presence = "present"
-    elif ( len(visage) > 0 or len(yeux) >0 ):
-        presence = "distracted"
-    
-    return {"presence" : presence}
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        visage = face_cascade.detectMultiScale(gray)
+        yeux = eye_cascade.detectMultiScale(gray)
+
+        presence ="absent"
+        if (len(visage) > 0 and len(yeux) > 0 ) :
+            presence = "present"
+        elif ( len(visage) > 0 or len(yeux) >0 ):
+            presence = "distracted"
+
+        return {"presence" : presence}
+    except Exception:
+        return {"presence": "absent"}
 
 #step 4 desktop alert when too much distracted 
 def update_distraction (state : CurrentApp ) : 
@@ -172,30 +165,3 @@ Structure ton rapport ainsi :
     print("\n📊 === RAPPORT DE PRODUCTIVITÉ === 📊\n")
     summary = LLM_answer(system_prompt, user_prompt)
     print(summary)
-
-graph = StateGraph(CurrentApp) # ou peut etre StateGraph({})
-graph.add_node ("capturer_app",capture_app)
-graph.add_node ("check_presence",check_presence)
-graph.add_node ("classify", classify)
-graph.add_node ("update_score",update_score)
-graph.add_node("update_distraction",update_distraction)
-graph.add_node ("send_alert", send_alert)
-graph.add_node ("attente",log_and_wait)
-
-graph.add_conditional_edges("attente", router, {"capture": "capturer_app"}) #for the loop
-
-graph.add_edge("capturer_app","check_presence")
-graph.add_edge("check_presence","classify")
-graph.add_edge("classify","update_score")
-graph.add_edge("update_score","update_distraction")
-graph.add_edge("update_distraction","send_alert")
-graph.add_edge("send_alert","attente")
-graph.set_entry_point("capturer_app")
-app = graph.compile()
-
-try :
-    app.invoke({"current_app": "Premiere Pro", "iteration": 1, "category":"neutre", "score" : 0, "presence":"absent", "distraction_streak":0 , "historique":[]}) # les premiers states sont obligatoires
-except KeyboardInterrupt : 
-    generate_report()
-
-
