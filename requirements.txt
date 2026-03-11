@@ -4,3 +4,6 @@ opencv-python
 plyer
 groq
 python-dotenv
+streamlit
+plotly
+pandas

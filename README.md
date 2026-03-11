@@ -4,37 +4,23 @@
 
 An intelligent desktop agent that monitors your activity, detects your presence via webcam, and nudges you back to focus when distractions take over.
 
-Built with **LangGraph** (stateful agent graph), **OpenCV** (computer vision), **Groq** (LLM reports), **SQLite** (persistence), and **plyer** (desktop notifications).
+Built with **LangGraph** (stateful agent graph), **OpenCV** (computer vision), **Groq** (LLM reports), **SQLite** (persistence), **Streamlit** (dashboard), and **plyer** (desktop notifications).
 
 ---
 
 ## Architecture
 
-```
-┌─────────────┐     ┌─────────────────┐     ┌───────────┐
-│ capture_app  │────▶│ check_presence   │────▶│  classify  │
-│  (psutil)    │     │   (OpenCV)       │     │(categories)│
-└─────────────┘     └─────────────────┘     └─────┬─────┘
-       ▲                                          │
-       │                                          ▼
-┌──────┴──────┐     ┌─────────────────┐     ┌───────────────┐
-│  log_wait    │◀───│   send_alert     │◀───│ update_score   │
-│  (3s loop)   │    │   (plyer)        │    │  (+2/-3 pts)   │
-└─────────────┘     └────────┬────────┘     └───────────────┘
-                             │
-                     ┌───────┴────────┐
-                     │update_distraction│
-                     │ (streak counter) │
-                     └────────────────┘
-```
-
-The graph loops infinitely: after `log_wait`, a **router** sends execution back to `capture_app`.
+![Nadhamni Architecture](assets/architecture.png)
 
 ---
 
 ## Demo
 
-![Nadhamni Demo](exemple-execution.png)
+![Nadhamni Demo](assets/demo-execution.png)
+
+![Dashboard Main](assets/dashboard-main.png)
+
+![Dashboard Top Apps](assets/dashboard-top-apps.png)
 
 ---
 
@@ -67,6 +53,7 @@ The graph loops infinitely: after `log_wait`, a **router** sends execution back 
 | Notifications   | plyer                 |
 | LLM Reports     | Groq (Llama 3.3 70B) |
 | Persistence     | SQLite               |
+| Dashboard       | Streamlit + Plotly    |
 | Language        | Python 3.12           |
 
 ---
@@ -92,6 +79,9 @@ cp .env.example .env
 # Run the agent
 python main.py
 # Press Ctrl+C to stop and generate AI report
+
+# Launch the dashboard
+streamlit run dashboard.py
 ```
 
 > **Note:** Webcam access is required for presence detection.
@@ -102,11 +92,18 @@ python main.py
 
 ```
 nadhamni/
+├── assets/
+│   ├── architecture.png
+│   ├── architecture.excalidraw
+│   ├── demo-execution.png
+│   ├── dashboard-main.png
+│   └── dashboard-top-apps.png
 ├── main.py           # Entry point — run this to start the agent
 ├── graph.py          # LangGraph StateGraph assembly
 ├── nodes.py          # All agent nodes (capture, classify, score, etc.)
 ├── config.py         # Categories dictionary + global state
 ├── database.py       # SQLite persistence (sessions & cycles)
+├── dashboard.py      # Streamlit productivity dashboard
 ├── test_webcam.py    # Standalone webcam test script
 ├── requirements.txt  # Python dependencies
 ├── .env.example      # Environment variables template
@@ -132,7 +129,7 @@ nadhamni/
 
 - [x] **Groq AI Evening Report** — Daily productivity summary via LLM
 - [x] **SQLite Persistence** — Store sessions and scores
-- [ ] **React Dashboard** — Visualize productivity trends
+- [x] **Streamlit Dashboard** — Visualize productivity trends
 - [ ] **Browser Tab Detection** — Classify by active tab, not just process
 - [ ] **Docker Support** — Containerized deployment
 

@@ -1,5 +1,7 @@
 import sqlite3
 import datetime
+import pandas as pd
+
 
 DB_PATH = "nadhamni.db"
 
@@ -59,3 +61,18 @@ def end_session (session_id,final_score):
     cursor.execute("""UPDATE sessions set final_score = ? , end_time = ? WHERE id = ? """, (final_score,datetime.datetime.now().isoformat(),session_id))
     conn.commit() 
     conn.close()
+
+
+
+#frontend functions 
+def get_all_sessions() :
+    conn = get_connection()
+    data = pd.read_sql_query("SELECT * FROM sessions", conn)
+    conn.close()
+    return data 
+
+def get_all_cycles() : 
+    conn = get_connection()
+    data = pd.read_sql_query("SELECT * FROM cycles", conn)
+    conn.close()
+    return data 
