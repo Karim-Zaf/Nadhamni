@@ -4,7 +4,7 @@
 
 An intelligent desktop agent that monitors your activity, detects your presence via webcam, and nudges you back to focus when distractions take over.
 
-Built with **LangGraph** (stateful agent graph), **OpenCV** (computer vision), **Groq** (LLM reports), and **plyer** (desktop notifications).
+Built with **LangGraph** (stateful agent graph), **OpenCV** (computer vision), **Groq** (LLM reports), **SQLite** (persistence), and **plyer** (desktop notifications).
 
 ---
 
@@ -66,6 +66,7 @@ The graph loops infinitely: after `log_wait`, a **router** sends execution back 
 | Computer Vision | OpenCV (Haar Cascade) |
 | Notifications   | plyer                 |
 | LLM Reports     | Groq (Llama 3.3 70B) |
+| Persistence     | SQLite               |
 | Language        | Python 3.12           |
 
 ---
@@ -105,6 +106,7 @@ nadhamni/
 ├── graph.py          # LangGraph StateGraph assembly
 ├── nodes.py          # All agent nodes (capture, classify, score, etc.)
 ├── config.py         # Categories dictionary + global state
+├── database.py       # SQLite persistence (sessions & cycles)
 ├── test_webcam.py    # Standalone webcam test script
 ├── requirements.txt  # Python dependencies
 ├── .env.example      # Environment variables template
@@ -129,7 +131,7 @@ nadhamni/
 ## Roadmap
 
 - [x] **Groq AI Evening Report** — Daily productivity summary via LLM
-- [ ] **SQLite Persistence** — Store sessions and scores
+- [x] **SQLite Persistence** — Store sessions and scores
 - [ ] **React Dashboard** — Visualize productivity trends
 - [ ] **Browser Tab Detection** — Classify by active tab, not just process
 - [ ] **Docker Support** — Containerized deployment

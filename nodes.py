@@ -1,14 +1,13 @@
 import os
-
 from dotenv import load_dotenv
 from groq import Groq
 from plyer import notification
-
 from config import categories, historique_global
 import time
 from typing import TypedDict
 import cv2
 import psutil
+from database import save_cycle
 
 
 class CurrentApp (TypedDict) :
@@ -17,9 +16,9 @@ class CurrentApp (TypedDict) :
     category : str 
     score : int 
     presence : str 
-    distraction_streak : int 
+    distraction_streak : int
+    session_id : int
     historique : list [str]
-
 
 def capture_app(state: CurrentApp) -> dict:
     # Récupère les process qui utilisent le plus de CPU
@@ -47,7 +46,9 @@ def log_and_wait (state : CurrentApp) -> dict :
     category = state["category"]
     score = state ["score"]
     presence = state["presence"]
-
+    session_id = state["session_id"]
+    
+    
     resultat_log = f"[iter{ iteration }   ] APP : { current_app } | {category} | {score} | {presence}"
     print (resultat_log)
     
@@ -56,6 +57,9 @@ def log_and_wait (state : CurrentApp) -> dict :
     historique = state["historique"].copy()
     historique.append(resultat_log)
     historique_global.append(resultat_log)
+
+    save_cycle(session_id,iteration,current_app,category,presence,score)  # saving the log in the database
+
     return{"historique":historique}
 
 def router (state: CurrentApp) -> dict : 
